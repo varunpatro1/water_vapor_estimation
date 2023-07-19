@@ -67,7 +67,7 @@ def calc_TOA_refl(rad, irr, zen):
 
 def main(file_path_list: list, irr_path: str):
     rad = load_info(file_path_list)[0]
-    irr = get_irr(file_path_list[2], irr_path)
+    irr = get_irr(file_path_list[1], irr_path)
     zen = load_info(file_path_list)[1]
 
     TOA_refl = calc_TOA_refl(rad, irr, zen)
