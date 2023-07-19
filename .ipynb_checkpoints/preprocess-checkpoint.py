@@ -16,31 +16,13 @@ def load_info(path_list: str):
     # order: obs, location, rad, mask
     data = []
     for i in range(len(path_list)):
-        #print(path_list[i])
         data.append(envi.open(path_list[i]).open_memmap(interleave = 'bip'))
 
-    """
-    obs_header = envi.open(obs_path)
-    location_header = envi.open(loc_path)
-    rad_header = envi.open(rad_path)
-    mask_header = envi.open(mask_path)
 
-    obs_data = obs_header.open_memmap(interleave = 'bip')
-    loc_data = location_header.open_memmap(interleave = 'bip')
-    rad_data = rad_header.open_memmap(interleave = 'bip')
-    mask_data = mask_header.open_memmap(interleave = 'bip')
-
-    "
-
-    lat = data[1][:,:,0]
-    lon = data[1][:,:,1]
-    elev = data[1][:,:,2
-
-    """
-    rad = data[2]
+    rad = data[1]
     zen = np.average(data[0][:,:,4])
     #es_distance = data[0][:,:,10]
-    water_vapor = data[3][:,:,6]
+    water_vapor = data[2][:,:,6]
 
     data_list = []
     data_list.append(rad)
