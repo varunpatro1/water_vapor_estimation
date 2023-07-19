@@ -12,13 +12,11 @@ import holoviews as hv
 import hvplot.xarray
 from datetime import datetime
 
-def load_info(path_list: str):
+def load_info(path_list):
     # order: obs, location, rad, mask
     data = []
     for i in range(len(path_list)):
         data.append(envi.open(path_list[i]).open_memmap(interleave = 'bip'))
-
-
     rad = data[1]
     zen = np.average(data[0][:,:,4])
     #es_distance = data[0][:,:,10]
@@ -26,14 +24,16 @@ def load_info(path_list: str):
 
     data_list = []
     data_list.append(rad)
-    #data_list.append(lat)
-    #data_list.append(lon)
-    #data_list.append(elev)
+
     data_list.append(zen)
     #data_list.append(es_distance)
     data_list.append(water_vapor)
 
     return data_list
+
+def get_water_vapor(path_list):
+    return load_info(path_list)[2]
+    
 
 def get_irr(rad_path: str, irr_path: str):
     rad_header = envi.open(rad_path)
