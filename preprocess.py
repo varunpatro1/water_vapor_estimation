@@ -13,7 +13,13 @@ import hvplot.xarray
 from datetime import datetime
 
 def load_info(path_list):
-    # order: obs, location, rad, mask
+    
+    """
+    Description: Loads the observation, radiance and mask header files. Extracts from these files
+    radiance, atmospheric water vapor and zenith angle, packages them into a list and returns them
+    File path order: obs, rad, mask
+
+    """
     data = []
     for i in range(len(path_list)):
         data.append(envi.open(path_list[i]).open_memmap(interleave = 'bip'))
@@ -31,11 +37,14 @@ def load_info(path_list):
 
     return data_list
 
-def get_water_vapor(path_list):
+def get_water_vapor(path_list):    
     return load_info(path_list)[2]
     
 
 def get_irr(rad_path: str, irr_path: str):
+
+    # Description: calculates irradiance based on kurudz irr file
+    
     rad_header = envi.open(rad_path)
 
     wl = rad_header.metadata['wavelength']
@@ -64,6 +73,24 @@ def calc_TOA_refl(rad, irr, zen):
     rho = (np.pi / np.cos(zen)) * rad / irr[np.newaxis, np.newaxis, :]
     return rho
 
+def reshape_select(TOA_refls, water_vapor_vals, img_size: int, num_to_select: int):
+
+    """
+    Description: reshapes two arrays of TOA reflectances and water vapor values and randomly
+    selects a user-prescribed number of pixels from each
+    """
+    TOA_refls_reshaped = TOA_refls.reshape((TOA_refls[0]*TOA_refls[1], TOA_refls[2]))
+    water_vapor_vals_reshaped = water_vapor_vals.flatten()
+    
+    indices = np.random.randint(low = 0, high = img_size, size = num_to_select)
+    subset_refls = TOA_refls_reshaped[indices]
+    subset_water_vapor = water_vapor_vals_reshaped[indices]
+
+    return subset_refls, subset_water_vapor
+
+
+
+
 
 def main(file_path_list: list, irr_path: str):
     rad = load_info(file_path_list)[0]
@@ -72,3 +99,4 @@ def main(file_path_list: list, irr_path: str):
 
     TOA_refl = calc_TOA_refl(rad, irr, zen)
     return TOA_refl
+
