@@ -57,11 +57,10 @@ def get_irr(rad_path: str, irr_path: str):
         fwhm[i] = float(fwhm[i])
     fwhm = np.array(fwhm)
 
-    # will need new irradiance file
-    irr_file = os.path.join(
-        os.path.dirname(isofit.__file__), "..", "data", "kurudz_0.1nm.dat") # same for anything TOA, pure solar irradiance
-
-    irr_wl, irr = np.loadtxt(irr_file, comments="#").T
+    irr_path = '../irr.npy'
+    data = np.load(irr_path)
+    irr_wl = data[:,0]
+    irr = data[:,1]
     irr = irr / 10  # convert to uW cm-2 sr-1 nm-1
     irr_resamp = resample_spectrum(irr, irr_wl, wl, fwhm)
     irr_resamp = np.array(irr_resamp, dtype=np.float32)
