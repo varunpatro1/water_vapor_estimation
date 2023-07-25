@@ -78,7 +78,7 @@ def reshape_select(TOA_refls, water_vapor_vals, img_size: int, num_to_select: in
     Description: reshapes two arrays of TOA reflectances and water vapor values and randomly
     selects a user-prescribed number of pixels from each
     """
-    TOA_refls_reshaped = TOA_refls.reshape((TOA_refls[0]*TOA_refls[1], TOA_refls[2]))
+    TOA_refls_reshaped = TOA_refls.reshape((TOA_refls.shape[0]*TOA_refls.shape[1], TOA_refls.shape[2]))
     water_vapor_vals_reshaped = water_vapor_vals.flatten()
     
     indices = np.random.randint(low = 0, high = img_size, size = num_to_select)
@@ -86,10 +86,6 @@ def reshape_select(TOA_refls, water_vapor_vals, img_size: int, num_to_select: in
     subset_water_vapor = water_vapor_vals_reshaped[indices]
 
     return subset_refls, subset_water_vapor
-
-
-
-
 
 def main(file_path_list: list, irr_path: str):
     rad = load_info(file_path_list)[0]
