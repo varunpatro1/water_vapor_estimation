@@ -12,86 +12,65 @@ import holoviews as hv
 import hvplot.xarray
 from datetime import datetime
 
-def load_info(path_list):
+def extract_from_header(path_list, irr_path):
     
     """
     Description: Loads the observation, radiance and mask header files. Extracts from these files
     radiance, atmospheric water vapor and zenith angle, packages them into a list and returns them
+    
     File path order: obs, rad, mask
 
     """
+    
     data = []
     for i in range(len(path_list)):
         data.append(envi.open(path_list[i]).open_memmap(interleave = 'bip'))
     rad = data[1]
-    zen = np.average(data[0][:,:,4])
-    #es_distance = data[0][:,:,10]
+    zen = zen = np.deg2rad(np.average(data[0][:,:,4]))
+    es_distance = data[0][:,:,10]
     water_vapor = data[2][:,:,6]
 
-    data_list = []
-    data_list.append(rad)
+    irr = calc_irr(path_list[1], irr_path)
+    irr = irr * ((np.average(es_distance))**2)
 
-    data_list.append(zen)
-    #data_list.append(es_distance)
-    data_list.append(water_vapor)
+    return rad, zen, irr, water_vapor
 
-    return data_list
-
-def get_water_vapor(path_list):    
-    return load_info(path_list)[2]
-    
-
-def get_irr(rad_path: str, irr_path: str):
-
-    # Description: calculates irradiance based on kurudz irr file
+def calc_irr(rad_path: str, irr_path: str):
     
     rad_header = envi.open(rad_path)
 
     wl = rad_header.metadata['wavelength']
+    fwhm = rad_header.metadata['fwhm']
     for i in range(len(wl)):
         wl[i] = float(wl[i])
-    wl = np.array(wl)
-
-    fwhm = rad_header.metadata['fwhm']
-    for i in range(len(fwhm)):
         fwhm[i] = float(fwhm[i])
+    wl = np.array(wl)
     fwhm = np.array(fwhm)
 
     irr_path = '../irr.npy'
     data = np.load(irr_path)
     irr_wl = data[:,0]
     irr = data[:,1]
-    irr = irr / 10  # convert to uW cm-2 sr-1 nm-1
+
     irr_resamp = resample_spectrum(irr, irr_wl, wl, fwhm)
     irr_resamp = np.array(irr_resamp, dtype=np.float32)
     irr = irr_resamp
 
     return irr
 
-def calc_TOA_refl(rad, irr, zen):
-    rho = (np.pi / np.cos(zen)) * rad / irr[np.newaxis, np.newaxis, :]
-    return rho
+def transform(file_path_list, irr_path, num_to_select):
 
-def reshape_select(TOA_refls, water_vapor_vals, img_size: int, num_to_select: int):
+    # perform TOA reflectance calculation
+    rad, zen, irr, wv = extract_from_header(file_path_list, irr_path)
+    refl = (np.pi / np.cos(zen)) * (rad / irr[np.newaxis, np.newaxis, :])
 
-    """
-    Description: reshapes two arrays of TOA reflectances and water vapor values and randomly
-    selects a user-prescribed number of pixels from each
-    """
-    TOA_refls_reshaped = TOA_refls.reshape((TOA_refls.shape[0]*TOA_refls.shape[1], TOA_refls.shape[2]))
-    water_vapor_vals_reshaped = water_vapor_vals.flatten()
-    
+    # reshape and randomly select
+    img_size = refl.shape[0]*refl.shape[1]
     indices = np.random.randint(low = 0, high = img_size, size = num_to_select)
-    subset_refls = TOA_refls_reshaped[indices]
-    subset_water_vapor = water_vapor_vals_reshaped[indices]
+    refl = refl.reshape((refl.shape[0]*refl.shape[1], refl.shape[2]))
+    wv = wv.flatten()
+    refl = refl[indices]
+    wv = wv[indices]
 
-    return subset_refls, subset_water_vapor
-
-def main(file_path_list: list, irr_path: str):
-    rad = load_info(file_path_list)[0]
-    irr = get_irr(file_path_list[1], irr_path)
-    zen = load_info(file_path_list)[1]
-
-    TOA_refl = calc_TOA_refl(rad, irr, zen)
-    return TOA_refl
+    return refl, wv
 
