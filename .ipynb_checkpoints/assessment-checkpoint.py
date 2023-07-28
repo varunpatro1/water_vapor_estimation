@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.metrics import r2_score
 
-def random_select(y_test, y_pred, num_to_select):
-    indices = np.random.randint(0, y_test.shape[0], num_to_select)
+def random_select(y_test, y_pred, indices):
     test = np.array(y_test)[indices]
     pred = np.array(y_pred)[indices]
     return test, pred
@@ -26,6 +26,28 @@ def plot_hist(y_test, y_pred, title):
     plt.xlabel('Atmospheric WV (g/cm^2)')
     plt.ylabel('Frequency')
     plt.title(title)
+
+def plot_scatter(y_test, y_pred, title):
+    plt.scatter(y_test, y_pred, alpha = 0.5)
+    plt.xlabel('g/cm^2')
+    plt.ylabel('g/cm^2')
+    plt.annotate("r-squared = {:.3f}".format(r2_score(y_test, y_pred)), (1, 5))
+    plt.title(title)
+
+def plot_hist_and_scatter(y_test, y_pred, title_hist, title_scatter):
+    fig, axs = plt.subplots(nrows = 1, ncols = 2, figsize = (8,4), constrained_layout = True)
+    axs[0].hist(y_test, alpha = 0.7, label = 'Actual ')
+    axs[0].hist(y_pred, alpha = 0.7, label = 'Predicted')
+    axs[0].legend()
+    axs[0].set_xlabel('Atmospheric WV (g/cm^2)')
+    axs[0].set_ylabel('Frequency')
+    axs[0].set_title(title_hist)
+
+    axs[1].scatter(y_test, y_pred, alpha = 0.5)
+    axs[1].annotate("r-squared = {:.3f}".format(r2_score(y_test, y_pred)), (1, 5))
+    axs[1].set_xlabel('g/cm^2')
+    axs[1].set_ylabel('g/cm^2')
+    axs[1].set_title(title_scatter)
 
 
 
