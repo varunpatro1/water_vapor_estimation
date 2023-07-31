@@ -74,3 +74,10 @@ def transform(file_path_list, irr_path, num_to_select):
 
     return refl, wv
 
+def convert_rad(file_path_list, irr_path):
+    
+    # perform TOA reflectance calculation
+    rad, zen, irr, wv = extract_from_header(file_path_list, irr_path)
+    refl = (np.pi / np.cos(zen)) * (rad / irr[np.newaxis, np.newaxis, :])
+
+    return refl
