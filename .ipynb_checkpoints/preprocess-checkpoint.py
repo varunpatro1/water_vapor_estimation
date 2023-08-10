@@ -58,7 +58,20 @@ def calc_irr(rad_path: str, irr_path: str):
 
     return irr
 
-def transform(file_path_list, irr_path, num_to_select):
+def transform_entire_scene(file_path_list, irr_path):
+
+    # perform TOA reflectance calculation
+    rad, zen, irr, wv = extract_from_header(file_path_list, irr_path)
+    refl = (np.pi / np.cos(zen)) * (rad / irr[np.newaxis, np.newaxis, :])
+
+    # reshape and randomly select
+    img_size = refl.shape[0]*refl.shape[1]
+    refl = refl.reshape((refl.shape[0]*refl.shape[1], refl.shape[2]))
+    wv = wv.flatten()
+
+    return refl, wv
+
+def transform_and_select(file_path_list, irr_path, num_to_select):
 
     # perform TOA reflectance calculation
     rad, zen, irr, wv = extract_from_header(file_path_list, irr_path)
