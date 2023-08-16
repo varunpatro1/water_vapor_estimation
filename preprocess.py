@@ -35,6 +35,33 @@ def extract_from_header(path_list, irr_path):
 
     return rad, zen, irr, water_vapor
 
+def extract_subset_from_header(path_list, irr_path):
+
+    #TODO - update documentation
+    """
+    Description: Loads the observation, radiance and mask header files. Extracts from these files
+    radiance, atmospheric water vapor and zenith angle, packages them into a list and returns them
+
+    File path order: obs, rad, mask
+
+    """
+
+    subset = ([640],np.arange(1242,dtype=int).tolist())
+    data = []
+    for i in range(len(path_list)):
+        data.append(envi.open(path_list[i]).open_memmap(interleave = 'bip')[subset])
+        print(data[i].shape)
+    rad = data[1]
+    zen = zen = np.deg2rad(np.average(data[0][...,4]))
+    es_distance = data[0][...,10]
+    water_vapor = data[2][...,6]
+
+    irr = calc_irr(path_list[1], irr_path)
+    irr = irr * ((np.average(es_distance))**2)
+
+    return rad, zen, irr, water_vapor
+
+
 def calc_irr(rad_path: str, irr_path: str):
     
     rad_header = envi.open(rad_path)
@@ -61,7 +88,7 @@ def calc_irr(rad_path: str, irr_path: str):
 def transform_entire_scene(file_path_list, irr_path):
 
     # perform TOA reflectance calculation
-    rad, zen, irr, wv = extract_from_header(file_path_list, irr_path)
+    rad, zen, irr, wv = extract_subset_from_header(file_path_list, irr_path)
     refl = (np.pi / np.cos(zen)) * (rad / irr[np.newaxis, np.newaxis, :])
 
     # reshape and randomly select

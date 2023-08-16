@@ -19,9 +19,9 @@ def plot_residuals(test, pred, title):
     plt.scatter(np.arange(test.shape[0]), residuals)
     plt.title(title)
 
-def plot_hist(y_test, y_pred, title):
-    plt.hist(y_test, alpha = 0.7, label = 'Actual ')
-    plt.hist(y_pred, alpha = 0.7, label = 'Predicted')
+def plot_hist(set_1, set_2, title, description_1, description_2):
+    plt.hist(set_1, alpha = 0.7, label = description_1)
+    plt.hist(set_2, alpha = 0.7, label = description_2)
     plt.legend()
     plt.xlabel('Atmospheric WV (g/cm^2)')
     plt.ylabel('Frequency')
