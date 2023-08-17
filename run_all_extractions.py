@@ -44,7 +44,7 @@ def main():
     parser = argparse.ArgumentParser(description="Run coverage vector tiling") #TODO
     parser.add_argument('fid_list', type=str) #TODO
     parser.add_argument('--irr_file', type=str, default='irr.npy') #TODO
-    parser.add_argument('--output_file', type=str, default='outdir/munged.npy') #TODO
+    parser.add_argument('--output_file', type=str, default='outdir/munged') #TODO
     args = parser.parse_args()
 
     fids = open(args.fid_list,'r').readlines()
@@ -78,6 +78,7 @@ def main():
     print(output_rfl.shape)
     print(output_wv.shape)
     print(output_idx.shape)
+    
     np.savez(args.output_file, output_rfl=output_rfl,output_wv=output_wv,output_idx=output_idx)
 
 
