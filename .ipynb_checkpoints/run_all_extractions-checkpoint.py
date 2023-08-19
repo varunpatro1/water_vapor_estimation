@@ -24,9 +24,9 @@ def get_mask(fid):
 
 
 @ray.remote
-def get_single_scene_data(rdn_file,obs_file,mask_file,irr_path,fid_index):
+def get_single_scene_data(rdn_file,obs_file,mask_file,irr_path,fid_index, fid):
     # perform TOA reflectance calculation
-    rad, zen, irr, wv = extract_subset_from_header([obs_file,rdn_file,mask_file], irr_path)
+    rad, zen, irr, wv, mask_dict = extract_subset_from_header([obs_file,rdn_file,mask_file], irr_path)
     refl = (np.pi / np.cos(zen)) * (rad / irr[np.newaxis, np.newaxis, :])
 
     # reshape and randomly select
@@ -35,8 +35,9 @@ def get_single_scene_data(rdn_file,obs_file,mask_file,irr_path,fid_index):
     wv = wv.flatten()
 
     out_fid = np.ones(len(wv),dtype=int)*fid_index
+    fid = np.ones(len(wv),dtype=int)*fid
 
-    return refl, wv, out_fid
+    return refl, wv, out_fid, fid, mask_dict
 
 
 def main():
@@ -44,7 +45,7 @@ def main():
     parser = argparse.ArgumentParser(description="Run coverage vector tiling") #TODO
     parser.add_argument('fid_list', type=str) #TODO
     parser.add_argument('--irr_file', type=str, default='irr.npy') #TODO
-    parser.add_argument('--output_file', type=str, default='outdir/munged.npy') #TODO
+    parser.add_argument('--output_file', type=str, default='outdir/munged') #TODO
     args = parser.parse_args()
 
     fids = open(args.fid_list,'r').readlines()
@@ -63,23 +64,26 @@ def main():
     ray.init()
     jobs = []
     for _fid, fid in enumerate(fids):
-        jobs.append(get_single_scene_data.remote(rdn_files[_fid], obs_files[_fid], mask_files[_fid], args.irr_file,_fid))
+        jobs.append(get_single_scene_data.remote(rdn_files[_fid], obs_files[_fid], mask_files[_fid], args.irr_file,_fid, fid))
 
-    output_rfl, output_wv, output_idx = [],[],[]
+    output_rfl, output_wv, output_idx = [],[],[], []
     rreturn = [ray.get(jid) for jid in jobs]
     for _res, res in enumerate(rreturn):
         output_rfl.append(res[0])
         output_wv.extend(res[1].tolist())
         output_idx.extend(res[2].tolist())
+        output_fid.extend(res[3].tolist())
 
     output_rfl = np.vstack(output_rfl)
     output_wv = np.array(output_wv)
     output_idx = np.array(output_idx)
+    output_fid = np.array(output_fid)
     print(output_rfl.shape)
     print(output_wv.shape)
     print(output_idx.shape)
-    np.savez(args.output_file, output_rfl=output_rfl,output_wv=output_wv,output_idx=output_idx)
-
+    print(output_fid.shape)
+    
+    dict = {'refls: ': output_rfl, 'water vapor': output_wv, 'fid index': output_idx, 'fid': output_fid}
 
 
 if __name__ == "__main__":

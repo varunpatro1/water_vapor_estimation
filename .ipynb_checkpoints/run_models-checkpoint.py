@@ -33,7 +33,7 @@ def load_and_remove(data):
 def split_data(scenes, wv_by_scene):
     
     np.random.seed(42)
-    X_idx = np.random.choice(718, 100)
+    X_idx = np.random.choice(718, 300)
     y_idx = X_idx
     X_train_idx, X_test_idx, y_train_idx, y_test_idx = train_test_split(X_idx, y_idx, test_size = 0.2, random_state = 50)
     
@@ -48,9 +48,8 @@ def split_data(scenes, wv_by_scene):
 
     return X_train, y_train, X_test, y_test
 
-def run_ref(dataset):
-    X_train, y_train, X_test, y_test = split_data(dataset)
-    
+def run_rf(X_train, y_train, X_test, y_test):
+        
     rf = RandomForestRegressor(random_state = 0)
     rf.fit(X_train, y_train)
     y_pred = rf.predict(X_test)
@@ -72,7 +71,7 @@ def main():
     data = np.load('../train_no_clouds.npz')
     scenes, wv_by_scene = load_and_remove(data)
     X_train, y_train, X_test, y_test = split_data(scenes, wv_by_scene)
-    run_dt(X_train, y_train, X_test, y_test)
+    run_rf(X_train, y_train, X_test, y_test)
     
 
 if __name__ == "__main__":
