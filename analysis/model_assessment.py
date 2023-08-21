@@ -49,7 +49,22 @@ def plot_hist_and_scatter(y_test, y_pred, title_hist, title_scatter):
     axs[1].set_ylabel('g/cm^2')
     axs[1].set_title(title_scatter)
 
+def compare_train_test_pred(y_train, y_test, y_pred):
+    plt.hist(y_train, alpha = 0.6, label = 'Train')
+    plt.hist(y_test, alpha = 0.6, label = 'Test')
+    plt.hist(y_pred, alpha = 0.6, label = 'Predicted')
+    plt.xlabel('Atmospheric WV (g/cm^2)')
+    plt.ylabel('Frequency')
+    plt.title('Train, Test and Predicted Histograms')
+    plt.legend()
 
+def compare_test_pred(y_test, y_pred):
+    plt.hist(y_test, alpha = 0.6, label = 'Test')
+    plt.hist(y_pred, alpha = 0.6, label = 'Predicted')
+    plt.xlabel('Atmospheric WV (g/cm^2)')
+    plt.ylabel('Frequency')
+    plt.title('Train, Test and Predicted Histograms')
+    plt.legend()
 
 def plot_bar_and_residuals(test, pred, title_bar, title_residuals):
     fig, axs = plt.subplots(nrows = 1, ncols = 2, figsize = (8,4), constrained_layout = True)
@@ -61,6 +76,7 @@ def plot_bar_and_residuals(test, pred, title_bar, title_residuals):
     residuals = abs(test - pred)
     axs[1].scatter(np.arange(test.shape[0]), residuals)
     axs[1].set_title(title_residuals)
+
 
 
 
