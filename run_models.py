@@ -6,9 +6,11 @@ import argparse
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.neural_network import MLPRegressor
+from sklearn.svm import SVR
 
 
-def load_and_remove(data, wv_upper_bound, shortened_bands):
+
+def load_and_remove(data, wv_upper_bound, num_bands):
     
     refls = data['output_rfl']
     wv = data['output_wv']
@@ -20,7 +22,7 @@ def load_and_remove(data, wv_upper_bound, shortened_bands):
     scenes = np.array(scenes)
     wv_by_scene = np.array(wv_by_scene)
     
-    if shortened_bands:
+    if num_bands == 40:
         scenes = scenes[:,:,60:100]
 
     bad = []
@@ -34,7 +36,7 @@ def load_and_remove(data, wv_upper_bound, shortened_bands):
 
     return scenes, wv_by_scene
 
-def split_data(scenes, wv_by_scene, per_pixel, all_samples, num_scenes):
+def split_data(scenes, wv_by_scene, per_pixel, dataset_fraction, num_scenes_to_select):
 
     if per_pixel:
         scenes = scenes.reshape((scenes.shape[0]*scenes.shape[1], scenes.shape[2]))
@@ -43,11 +45,11 @@ def split_data(scenes, wv_by_scene, per_pixel, all_samples, num_scenes):
 
     else:
         # per scene
-        if all_samples:
-            X_idx = np.arange(718)
+        if dataset_fraction == 'all':
+            X_idx = np.arange(scenes.shape[0])
         else:
             np.random.seed(42)
-            X_idx = np.random.choice(718, num_scenes)
+            X_idx = np.random.choice(scenes.shape[0], num_scenes_to_select)
 
         y_idx = X_idx
         X_train_idx, X_test_idx, y_train_idx, y_test_idx = train_test_split(X_idx, y_idx, test_size = 0.2, random_state = 50)
@@ -81,9 +83,9 @@ def run_dt(X_train, y_train, X_test, y_test, file_outpath):
     outpath = file_outpath
     np.savez(outpath, y_pred, y_test, y_train)
 
-def run_mlpreg(X_train, y_train, X_test, y_test, file_outpath, per_pixel):
+def run_mlpreg(X_train, y_train, X_test, y_test, file_outpath, num_bands):
 
-    if per_pixel:
+    if num_bands == 40:
         clf = MLPRegressor(alpha=1e-5, hidden_layer_sizes=(50, 50), activation = 'tanh', random_state=1)
     else:
         clf = MLPRegressor(alpha=1e-5, hidden_layer_sizes=(300,300), activation = 'tanh', random_state=1)
@@ -94,14 +96,50 @@ def run_mlpreg(X_train, y_train, X_test, y_test, file_outpath, per_pixel):
     outpath = file_outpath
     np.savez(outpath, y_pred, y_test, y_train)
 
+def run_svmreg(X_train, y_train, X_test, y_test, file_outpath):
+    
+    svr = SVR()
+    svr.fit(X_train, y_train)
+    y_pred = svr.predict(X_test)
 
+    outpath = file_outpath
+    np.savez(outpath, y_pred, y_test, y_train)
+    
 def main():
+    # LOAD DATA
     data = np.load('train_no_clouds.npz')
-    scenes, wv_by_scene = load_and_remove(data, wv_upper_bound = 5, shortened_bands = False)
-    X_train, y_train, X_test, y_test = split_data(scenes, wv_by_scene, per_pixel = True, all_samples = True, num_scenes = 718)
-    run_dt(X_train, y_train, X_test, y_test, 'model_outdir/per_pixel/all_dt_5')
-    run_rf(X_train, y_train, X_test, y_test, 'model_outdir/per_pixel/all_rf_5')
-    run_mlpreg(X_train, y_train, X_test, y_test, 'model_outdir/per_pixel/all_mlpreg_5', per_pixel = True)
+
+    # SET PARAMETER VALUES
+    wv_upper_bounds = [5, 6]
+    num_bands = [40, 285]
+    dataset_frac = 'all'
+	#dataset_frac = 'partial'
+    
+    pixel_based = False
+    scenes_to_select = 300
+	
+    # MODIFY DATA AND RUN MODELS
+    
+    if dataset_frac == 'all':
+        for wv in wv_upper_bounds:
+    		for bands in num_bands:
+                scenes, wv_by_scene = load_and_remove(data, wv_upper_bound = wv, num_bands = bands)
+                X_train, y_train, X_test, y_test = split_data(scenes, wv_by_scene, per_pixel = pixel_based, \
+                                                                  dataset_fraction = dataset_frac, num_scenes_to_select = scenes_to_select)
+    			run_dt(X_train, y_train, X_test, y_test, f'model_outdir/second_run/all_dt_{wv}_{bands}')
+        		run_rf(X_train, y_train, X_test, y_test, f'model_outdir/second_run/all_rf_{wv}_{bands}')
+        		run_mlpreg(X_train, y_train, X_test, y_test, f'model_outdir/second_run/all_mlpreg_{wv}_{bands}', num_bands = bands)
+        		run_svmreg(X_train, y_train, X_test, y_test, f'model_outdir/second_run/all_svmreg_{wv}_{bands}')
+    else:
+    	for wv in wv_upper_bounds:
+    		for bands in num_bands:
+                scenes, wv_by_scene = load_and_remove(data, wv_upper_bound = wv, num_bands = bands)
+                X_train, y_train, X_test, y_test = split_data(scenes, wv_by_scene, per_pixel = pixel_based, \
+                                                                  dataset_fraction = dataset_frac, num_scenes_to_select = scenes_to_select)
+        		run_dt(X_train, y_train, X_test, y_test, f'model_outdir/{scenes_to_select}_dt_{wv}_{bands}'
+        		run_rf(X_train, y_train, X_test, y_test, f'model_outdir/{scenes_to_select}_rf_{wv}_{bands}'
+        		run_mlpreg(X_train, y_train, X_test, y_test, f'model_outdir/{scenes_to_select}_mlpreg_{wv}_{bands}', num_bands = bands)
+        		run_svmreg(X_train, y_train, X_test, y_test, f'model_outdir/{scenes_to_select}_svmreg_{wv}_{bands}')
 
 if __name__ == "__main__":
     main()

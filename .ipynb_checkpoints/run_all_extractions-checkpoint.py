@@ -78,6 +78,7 @@ def main():
     output_wv = np.array(output_wv)
     output_idx = np.array(output_idx)
     output_fid = np.array(output_fid)
+    
     print(output_rfl.shape)
     print(output_wv.shape)
     print(output_idx.shape)
