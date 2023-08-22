@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import r2_score
+import math
+from sklearn.metrics import mean_squared_error
 
 def random_select(y_test, y_pred, indices):
     test = np.array(y_test)[indices]
@@ -76,6 +78,45 @@ def plot_bar_and_residuals(test, pred, title_bar, title_residuals):
     residuals = abs(test - pred)
     axs[1].scatter(np.arange(test.shape[0]), residuals)
     axs[1].set_title(title_residuals)
+
+        
+
+
+def plot_range_hist(y_test, y_pred, path, mode):
+
+    model_name = path[path.rfind('/')+1: path.rfind('.')].upper()
+    
+    crosstrack_pixel_length = 1242
+    num_test_scenes = math.floor(y_test.shape[0] / crosstrack_pixel_length)
+    y_test = y_test.reshape((num_test_scenes, crosstrack_pixel_length))
+    y_pred = y_pred.reshape((num_test_scenes, crosstrack_pixel_length))
+
+    if mode == 'percentile':
+        test_2 = np.percentile(y_test, 0.02, axis=1)
+        pred_2 = np.percentile(y_pred, 0.02, axis=1)
+        test_98 = np.percentile(y_test, 0.98, axis=1)
+        pred_98 = np.percentile(y_pred, 0.98, axis=1)
+    
+        test_ranges = np.subtract(test_98, test_2)
+        pred_ranges = np.subtract(pred_98, pred_2)
+
+        title = 'WV Range Values (2nd to 98 percentiles) for ' + model_name
+
+    else:
+    
+        test_ranges = np.max(y_test, axis = 1) - np.min(y_test, axis = 1)
+        pred_ranges = np.max(y_pred, axis = 1) - np.min(y_pred, axis = 1)
+
+        title = 'WV Range Values (Abs Max - Abs Min) for ' + model_name
+        
+    mse = mean_squared_error(test_ranges, pred_ranges)
+    print('Mean Squared Error: ', mse)
+    plt.hist(test_ranges, alpha = 0.7, label = 'Test');
+    plt.hist(pred_ranges, alpha = 0.7, label = 'Predicted');
+    plt.title(title);
+    plt.xlabel('WV Range (g/cm^2)');
+    plt.ylabel('Frequency');
+    plt.legend();
 
 
 
