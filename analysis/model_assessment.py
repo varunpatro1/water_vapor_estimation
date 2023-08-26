@@ -3,6 +3,7 @@ import numpy as np
 from sklearn.metrics import r2_score
 import math
 from sklearn.metrics import mean_squared_error
+import seaborn as sns
 
 def random_select(y_test, y_pred, indices):
     test = np.array(y_test)[indices]
@@ -118,6 +119,59 @@ def plot_range_hist(y_test, y_pred, path, mode):
     plt.ylabel('Frequency');
     plt.legend();
 
+def plot_range_scatter(y_test, y_pred, path, mode):
+    
+    model_name = path[path.rfind('/')+1: path.rfind('.')].upper()
+
+    crosstrack_pixel_length = 1242
+    num_test_scenes = math.floor(y_test.shape[0] / crosstrack_pixel_length)
+    y_test = y_test.reshape((num_test_scenes, crosstrack_pixel_length))
+    y_pred = y_pred.reshape((num_test_scenes, crosstrack_pixel_length))
+
+    if mode == 'percentile':
+        test_2 = np.percentile(y_test, 0.02, axis=1)
+        pred_2 = np.percentile(y_pred, 0.02, axis=1)
+        test_98 = np.percentile(y_test, 0.98, axis=1)
+        pred_98 = np.percentile(y_pred, 0.98, axis=1)
+    
+        test_ranges = np.subtract(test_98, test_2)
+        pred_ranges = np.subtract(pred_98, pred_2)
+
+        title = 'WV Range Scatter (2nd to 98 percentiles) for ' + model_name
+
+    else:
+    
+        test_ranges = np.max(y_test, axis = 1) - np.min(y_test, axis = 1)
+        pred_ranges = np.max(y_pred, axis = 1) - np.min(y_pred, axis = 1)
+
+        title = 'WV Range Scatter (Abs Max - Abs Min) for ' + model_name
+
+    mse = mean_squared_error(test_ranges, pred_ranges)
+    r2 = r2_score(test_ranges, pred_ranges)
+    print('Mean Squared Error: ', mse)
+    print('R-Squared of Fit: ', r2)
+
+    #m, b = np.polyfit(test_ranges, pred_ranges, 1)
+    #plt.plot(test_ranges, m*test_ranges+b)
+    plt.scatter(test_ranges, pred_ranges, alpha = 0.5)
+    plt.title(title);
+    plt.xlabel('Actual WV Ranges (g/cm^2)');
+    plt.ylabel('Predicted WV Ranges (g/cm^2)');
+    plt.legend();
+
+def get_percentiles(y_test, y_pred):
+
+    crosstrack_pixel_length = 1242
+    num_test_scenes = math.floor(y_test.shape[0] / crosstrack_pixel_length)
+    y_test = y_test.reshape((num_test_scenes, crosstrack_pixel_length))
+    y_pred = y_pred.reshape((num_test_scenes, crosstrack_pixel_length))
+    
+    test_2 = np.percentile(y_test, 0.02, axis=1)
+    pred_2 = np.percentile(y_pred, 0.02, axis=1)
+    test_98 = np.percentile(y_test, 0.98, axis=1)
+    pred_98 = np.percentile(y_pred, 0.98, axis=1)
+
+    return test_2, pred_2, test_98, pred_98
 
 
 
