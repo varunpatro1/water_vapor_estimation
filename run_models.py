@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.neural_network import MLPRegressor
 from sklearn.svm import SVR
-
+import argparse
 
 
 def load_and_remove(data, wv_upper_bound, num_bands):
@@ -107,7 +107,14 @@ def run_svmreg(X_train, y_train, X_test, y_test, file_outpath):
     
 def main():
     # LOAD DATA
-    data = np.load('train_no_clouds.npz')
+
+    parser = argparse.ArgumentParser()
+    
+    parser.add_argument('train_fname', help = 'path to train data file')
+    args = parser.parse_args()
+
+    
+    data = np.load(args.train_fname)
 
     # SET PARAMETER VALUES
     wv_upper_bounds = [5, 6]
@@ -122,24 +129,24 @@ def main():
     
     if dataset_frac == 'all':
         for wv in wv_upper_bounds:
-    		for bands in num_bands:
+            for bands in num_bands:
                 scenes, wv_by_scene = load_and_remove(data, wv_upper_bound = wv, num_bands = bands)
                 X_train, y_train, X_test, y_test = split_data(scenes, wv_by_scene, per_pixel = pixel_based, \
                                                                   dataset_fraction = dataset_frac, num_scenes_to_select = scenes_to_select)
-    			run_dt(X_train, y_train, X_test, y_test, f'model_outdir/second_run/all_dt_{wv}_{bands}')
-        		run_rf(X_train, y_train, X_test, y_test, f'model_outdir/second_run/all_rf_{wv}_{bands}')
-        		run_mlpreg(X_train, y_train, X_test, y_test, f'model_outdir/second_run/all_mlpreg_{wv}_{bands}', num_bands = bands)
-        		run_svmreg(X_train, y_train, X_test, y_test, f'model_outdir/second_run/all_svmreg_{wv}_{bands}')
+                run_dt(X_train, y_train, X_test, y_test, f'model_outdir/second_run/no_svm/all_dt_{wv}_{bands}')
+                run_rf(X_train, y_train, X_test, y_test, f'model_outdir/second_run/no_svm/all_rf_{wv}_{bands}')
+                run_mlpreg(X_train, y_train, X_test, y_test, f'model_outdir/second_run/no_svm/all_mlpreg_{wv}_{bands}', num_bands = bands)
+                #run_svmreg(X_train, y_train, X_test, y_test, f'model_outdir/second_run/all_svmreg_{wv}_{bands}')
     else:
-    	for wv in wv_upper_bounds:
-    		for bands in num_bands:
+        for wv in wv_upper_bounds:
+            for bands in num_bands:
                 scenes, wv_by_scene = load_and_remove(data, wv_upper_bound = wv, num_bands = bands)
                 X_train, y_train, X_test, y_test = split_data(scenes, wv_by_scene, per_pixel = pixel_based, \
                                                                   dataset_fraction = dataset_frac, num_scenes_to_select = scenes_to_select)
-        		run_dt(X_train, y_train, X_test, y_test, f'model_outdir/{scenes_to_select}_dt_{wv}_{bands}'
-        		run_rf(X_train, y_train, X_test, y_test, f'model_outdir/{scenes_to_select}_rf_{wv}_{bands}'
-        		run_mlpreg(X_train, y_train, X_test, y_test, f'model_outdir/{scenes_to_select}_mlpreg_{wv}_{bands}', num_bands = bands)
-        		run_svmreg(X_train, y_train, X_test, y_test, f'model_outdir/{scenes_to_select}_svmreg_{wv}_{bands}')
+                run_dt(X_train, y_train, X_test, y_test, f'model_outdir/{scenes_to_select}_dt_{wv}_{bands}')
+                run_rf(X_train, y_train, X_test, y_test, f'model_outdir/{scenes_to_select}_rf_{wv}_{bands}')
+                run_mlpreg(X_train, y_train, X_test, y_test, f'model_outdir/{scenes_to_select}_mlpreg_{wv}_{bands}', num_bands = bands)
+                #run_svmreg(X_train, y_train, X_test, y_test, f'model_outdir/{scenes_to_select}_svmreg_{wv}_{bands}')
 
 if __name__ == "__main__":
     main()
