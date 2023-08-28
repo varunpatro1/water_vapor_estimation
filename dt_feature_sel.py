@@ -7,7 +7,7 @@ import pandas as pd
 import random
 from sklearn import tree
 import joblib
-
+se
 def load_and_remove(data, wv_upper_bound, num_bands):
     
     refls = data['output_rfl']

@@ -8,7 +8,7 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.neural_network import MLPRegressor
 from sklearn.svm import SVR
 import argparse
-
+import joblib
 
 def load_and_remove(data, wv_upper_bound, num_bands):
     
@@ -17,8 +17,8 @@ def load_and_remove(data, wv_upper_bound, num_bands):
     fids = data['output_idx']
     
     values, counts = np.unique(fids, return_counts=True)
-    scenes = np.split(refls, 743)
-    wv_by_scene = np.split(wv, 743)
+    scenes = np.split(refls, 1725)
+    wv_by_scene = np.split(wv, 1725)
     scenes = np.array(scenes)
     wv_by_scene = np.array(wv_by_scene)
     
@@ -67,12 +67,13 @@ def split_data(scenes, wv_by_scene, per_pixel, dataset_fraction, num_scenes_to_s
 
 def run_rf(X_train, y_train, X_test, y_test, file_outpath):
     
-    rf = RandomForestRegressor(random_state = 0)
+    rf = RandomForestRegressor(n_estimators = 100, random_state = 0)
     rf.fit(X_train, y_train)
     y_pred = rf.predict(X_test)
     
     outpath = file_outpath
     np.savez(outpath, y_pred, y_test, y_train)
+    joblib.dump(rf, f'{outpath}_model')
 
 def run_dt(X_train, y_train, X_test, y_test, file_outpath):
 
@@ -107,14 +108,16 @@ def run_svmreg(X_train, y_train, X_test, y_test, file_outpath):
     
 def main():
     # LOAD DATA
-
+	"""
     parser = argparse.ArgumentParser()
     
     parser.add_argument('train_fname', help = 'path to train data file')
     args = parser.parse_args()
-
+	"""
     
-    data = np.load(args.train_fname)
+    #data = np.load(args.train_fname)
+
+    data = np.load('outdir/munged.npz')
 
     # SET PARAMETER VALUES
     wv_upper_bounds = [5, 6]
@@ -133,20 +136,9 @@ def main():
                 scenes, wv_by_scene = load_and_remove(data, wv_upper_bound = wv, num_bands = bands)
                 X_train, y_train, X_test, y_test = split_data(scenes, wv_by_scene, per_pixel = pixel_based, \
                                                                   dataset_fraction = dataset_frac, num_scenes_to_select = scenes_to_select)
-                run_dt(X_train, y_train, X_test, y_test, f'model_outdir/second_run/no_svm/all_dt_{wv}_{bands}')
-                run_rf(X_train, y_train, X_test, y_test, f'model_outdir/second_run/no_svm/all_rf_{wv}_{bands}')
-                run_mlpreg(X_train, y_train, X_test, y_test, f'model_outdir/second_run/no_svm/all_mlpreg_{wv}_{bands}', num_bands = bands)
-                #run_svmreg(X_train, y_train, X_test, y_test, f'model_outdir/second_run/all_svmreg_{wv}_{bands}')
-    else:
-        for wv in wv_upper_bounds:
-            for bands in num_bands:
-                scenes, wv_by_scene = load_and_remove(data, wv_upper_bound = wv, num_bands = bands)
-                X_train, y_train, X_test, y_test = split_data(scenes, wv_by_scene, per_pixel = pixel_based, \
-                                                                  dataset_fraction = dataset_frac, num_scenes_to_select = scenes_to_select)
-                run_dt(X_train, y_train, X_test, y_test, f'model_outdir/{scenes_to_select}_dt_{wv}_{bands}')
-                run_rf(X_train, y_train, X_test, y_test, f'model_outdir/{scenes_to_select}_rf_{wv}_{bands}')
-                run_mlpreg(X_train, y_train, X_test, y_test, f'model_outdir/{scenes_to_select}_mlpreg_{wv}_{bands}', num_bands = bands)
-                #run_svmreg(X_train, y_train, X_test, y_test, f'model_outdir/{scenes_to_select}_svmreg_{wv}_{bands}')
+                #run_dt(X_train, y_train, X_test, y_test, f'model_outdir/enlarged_train_set/first_run/all_dt_{wv}_{bands}')
+                run_rf(X_train, y_train, X_test, y_test, f'model_outdir/enlarged_train_set/increase_rf_100/all_rf_{wv}_{bands}')
+                #run_mlpreg(X_train, y_train, X_test, y_test, f'model_outdir/enlarged_train_set/first_run/all_mlpreg_{wv}_{bands}', num_bands = bands)
 
 if __name__ == "__main__":
     main()
