@@ -56,26 +56,29 @@ def plot_scatter_permutations(fnames, mode):
             test_ranges = np.subtract(test_98, test_2)
             pred_ranges = np.subtract(pred_98, pred_2)
             
-            title = 'WVR Scatter (2nd - 98 percentiles) for ' + model_name
+            title = 'WVR Percentile Comparison for ' + model_name
+    
+            mse = mean_squared_error(test_ranges, pred_ranges)
+            slope, intercept, r_value, p_value, std_err = linregress(test_ranges, pred_ranges)
+
+            axs[row, col].scatter(test_ranges, pred_ranges, alpha = 0.5)
         
         else:
     
             test_ranges = np.max(y_test, axis = 1) - np.min(y_test, axis = 1)
             pred_ranges = np.max(y_pred, axis = 1) - np.min(y_pred, axis = 1)
     
-            title = 'WV Range Values (Abs Max - Abs Min) for ' + model_name
+            title = 'WVR Absolute Comparison for ' + model_name
     
-        mse = mean_squared_error(test_ranges, pred_ranges)
-        r2 = r2_score(test_ranges, pred_ranges)
-        print('Mean Squared Error: ', mse)
-        #print('R-Squared of Fit: ', r2)
-        slope, intercept, r_value, p_value, std_err = linregress(test_ranges, pred_ranges)
-        print('R-Squared of Fit: ', r_value)
-    
-    
-        #m, b = np.polyfit(test_ranges, pred_ranges, 1)
-        #plt.plot(test_ranges, m*test_ranges+b)
-        axs[row, col].scatter(test_ranges, pred_ranges, alpha = 0.5)
+            mse = mean_squared_error(test_ranges, pred_ranges)
+            slope, intercept, r_value, p_value, std_err = linregress(test_ranges, pred_ranges)
+
+            axs[row, col].scatter(test_ranges, pred_ranges, alpha = 0.5)
+            axs[row, col].set_xticks(range(0, 7))
+            axs[row, col].set_yticks(range(0, 7))
+            
+        axs[row, col].text(0.7, 0.15,  'y = %.2fx + %.2f' % (slope, intercept), transform=axs[row, col].transAxes)
+        axs[row, col].text(0.7, 0.1,  'MSE: %.2f' % (mse), transform=axs[row, col].transAxes)
         axs[row, col].set_title(title);
         axs[row, col].set_xlabel('Actual WV Ranges (g/cm^2)');
         axs[row, col].set_ylabel('Predicted WV Ranges (g/cm^2)');
@@ -103,13 +106,52 @@ def plot_hist_train_test(fnames):
         y_pred, y_test, y_train = data['arr_0'], data['arr_1'], data['arr_2']
 
         mse = mean_squared_error(y_test, y_pred)
-        print('Mean Squared Error: ', mse)
+        #print('Mean Squared Error: ', mse)
         
         axs[row, col].hist(y_test, alpha = 0.6, label = 'Test')
         axs[row, col].hist(y_pred, alpha = 0.6, label = 'Predicted')
         axs[row, col].set_xlabel('Atmospheric WV (g/cm^2)')
         axs[row, col].set_ylabel('Frequency')
-        axs[row, col].set_title('Train and Testa Histograms for ' + model_name)
+        axs[row, col].set_title('Train and Test Pixels for ' + model_name)
+        axs[row, col].text(0.8, 0.5,  'MSE: %.2f' % (mse), transform=axs[row, col].transAxes)
         axs[row, col].legend()
+
+        col+=1
+
+
+def plot_scatter_train_test(fnames):
+
+    fig, axs = plt.subplots(2, 2, figsize = (10, 8))
+    fig.tight_layout(pad=0.4, w_pad=2.5, h_pad=4.0)
+    
+    row = 0
+    col = 0
+    
+    for i in range(len(fnames)):
+    
+        if col == 2:
+            col = 0
+            row+=1
+    
+        path = fnames[i]
+        data = np.load(path)
+        model_name = path[path.rfind('/')+1: path.rfind('.')].upper()
+        y_pred, y_test, y_train = data['arr_0'], data['arr_1'], data['arr_2']
+        print(y_test.shape)
+        print(y_pred.shape)
+
+        mse = mean_squared_error(y_test, y_pred)
+        #print('Mean Squared Error: ', mse)
+        slope, intercept, r_value, p_value, std_err = linregress(y_test, y_pred)
+        #print('R-Squared of Fit: ', r_value)
+        
+        axs[row, col].scatter(y_test, y_pred, alpha = 0.1)
+        axs[row, col].set_xticks(range(0, 7))
+        axs[row, col].set_yticks(range(0, 7))
+        axs[row, col].text(0.7, 0.15,  'y = %.2fx + %.2f' % (slope, intercept), transform=axs[row, col].transAxes)
+        axs[row, col].text(0.7, 0.1,  'MSE: %.2f' % (mse), transform=axs[row, col].transAxes)
+        axs[row, col].set_title('Per-Pixel Performance of ' + model_name);
+        axs[row, col].set_xlabel('Actual WV (g/cm^2)');
+        axs[row, col].set_ylabel('Predicted WV (g/cm^2)');
 
         col+=1
