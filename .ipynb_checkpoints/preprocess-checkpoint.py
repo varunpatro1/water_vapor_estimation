@@ -79,18 +79,14 @@ def calc_irr(rad_path: str, irr_path: str):
 
     wl = rad_header.metadata['wavelength']
     fwhm = rad_header.metadata['fwhm']
-    for i in range(len(wl)):
-        wl[i] = float(wl[i])
-        fwhm[i] = float(fwhm[i])
-    wl = np.array(wl)
-    fwhm = np.array(fwhm)
+    wl_arr = np.array([float(i) for i in wl])
+    fwhm_arr = np.array([float(i) for i in fwhm])
 
-    irr_path = '../irr.npy'
     data = np.load(irr_path)
     irr_wl = data[:,0]
     irr = data[:,1]
 
-    irr_resamp = resample_spectrum(irr, irr_wl, wl, fwhm)
+    irr_resamp = resample_spectrum(irr, irr_wl, wl_arr, fwhm_arr)
     irr_resamp = np.array(irr_resamp, dtype=np.float32)
     irr = irr_resamp
 
@@ -106,6 +102,10 @@ def transform_entire_scene(file_path_list, irr_path):
     img_size = refl.shape[0]*refl.shape[1]
     refl = refl.reshape((refl.shape[0]*refl.shape[1], refl.shape[2]))
     wv = wv.flatten()
+
+    print('TOA reflection: ', refl.shape)
+    print('Water Vapor: ', wv.shape)
+    print('CONVERSION COMPLETE')
 
     return refl, wv, mask_dict
 

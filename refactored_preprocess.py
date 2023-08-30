@@ -1,16 +1,11 @@
-import netCDF4 as nc
-import xarray as xr
-from geoarray import GeoArray
+
 from spectral.io import envi
 import matplotlib.pyplot as plt
 import numpy as np
 from isofit.core.common import resample_spectrum
 import os
 import isofit
-from isofit.core.sunposition import sunpos
-import holoviews as hv
-import hvplot.xarray
-from datetime import datetime
+
 
 def extract_from_header(path_list, irr_path):
     
@@ -50,27 +45,15 @@ def extract_subset_from_header(path_list, irr_path):
     data = []
     for i in range(len(path_list)):
         data.append(envi.open(path_list[i]).open_memmap(interleave = 'bip')[subset])
-        print(data[i].shape)
     rad = data[1]
     zen = np.deg2rad(np.average(data[0][...,4]))
     es_distance = data[0][...,10]
-    cloud_flag = data[2][..., 0]
-    cirrus_flag = data[2][..., 1]
-    water_flag = data[2][..., 2]
-    spacecraft_flag = data[2][..., 3]
-    dilated_cloud_flag = data[2][...,4]
-    aod_flag = data[2][..., 5]
     water_vapor = data[2][...,6]
-    aggregate_flag = data[2][..., 7]
-
-    mask_dict = {'cloud flag': cloud_flag, 'cirrus flag': cirrus_flag, 'water flag': water_flag, \
-                'spacecraft flag': spacecraft_flag, 'dilated cloud flag': dilated_cloud_flag, 'aod flag': aod_flag, \
-                'aggregate flag': aggregate_flag}
 
     irr = calc_irr(path_list[1], irr_path)
     irr = irr * ((np.average(es_distance))**2)
 
-    return rad, zen, irr, water_vapor, mask_dict
+    return rad, zen, irr, water_vapor
 
 
 def calc_irr(rad_path: str, irr_path: str):
@@ -95,40 +78,14 @@ def calc_irr(rad_path: str, irr_path: str):
 def transform_entire_scene(file_path_list, irr_path):
 
     # perform TOA reflectance calculation
-    rad, zen, irr, wv, mask_dict = extract_subset_from_header(file_path_list, irr_path)
+    rad, zen, irr, wv = extract_subset_from_header(file_path_list, irr_path)
     refl = (np.pi / np.cos(zen)) * (rad / irr[np.newaxis, np.newaxis, :])
 
     # reshape and randomly select
     img_size = refl.shape[0]*refl.shape[1]
     refl = refl.reshape((refl.shape[0]*refl.shape[1], refl.shape[2]))
     wv = wv.flatten()
-
-    print('TOA reflection: ', refl.shape)
-    print('Water Vapor: ', wv.shape)
-    print('CONVERSION COMPLETE')
-
-    return refl, wv, mask_dict
-
-def transform_and_select(file_path_list, irr_path, num_to_select):
-
-    # perform TOA reflectance calculation
-    rad, zen, irr, wv = extract_from_header(file_path_list, irr_path)
-    refl = (np.pi / np.cos(zen)) * (rad / irr[np.newaxis, np.newaxis, :])
-
-    # reshape and randomly select
-    img_size = refl.shape[0]*refl.shape[1]
-    indices = np.random.randint(low = 0, high = img_size, size = num_to_select)
-    refl = refl.reshape((refl.shape[0]*refl.shape[1], refl.shape[2]))
-    wv = wv.flatten()
-    refl = refl[indices]
-    wv = wv[indices]
 
     return refl, wv
 
-def convert_rad(file_path_list, irr_path):
-    
-    # perform TOA reflectance calculation
-    rad, zen, irr, wv = extract_from_header(file_path_list, irr_path)
-    refl = (np.pi / np.cos(zen)) * (rad / irr[np.newaxis, np.newaxis, :])
 
-    return refl
