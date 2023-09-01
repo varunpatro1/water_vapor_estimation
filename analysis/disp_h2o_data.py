@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 from spectral.io import envi
+import numpy as np
 
 def load_h2o_data(mask_path: str):
     mask_header = envi.open(mask_path)
@@ -34,4 +35,40 @@ def plot_h2o_hist(water_vapor):
     plt.xlabel('Water Vapor (g/cm^2)')
     plt.ylabel('Frequency')
     plt.show()
+
+def plot_h2o_compare(wv_test, wv_pred):
+    fig, axs = plt.subplots(nrows = 1, ncols = 2, figsize = (8, 6), constrained_layout = True)
+
+    im1 = axs[0].imshow(wv_test)
+    fig.colorbar(im1)
+    im1.set_clim(0, 4.0)
+    axs[0].set_title("WV Test (g/cm^2)")
+
+    im2 = axs[1].imshow(wv_pred)
+    fig.colorbar(im2)
+    axs[1].set_title("WV Pred (g/cm^2)")
+    im2.set_clim(0, 4.0)
+
+
+def plot_masks_and_residuals(test, pred, idx, clim_1 = (0, 6), clim_2 = (-1, 1)):
+    fig, axs = plt.subplots(nrows = 1, ncols = 3, figsize = (14, 8), constrained_layout = True)
+
+    test = test[idx]
+    pred = pred[idx]
+
+    im1 = axs[0].imshow(test)
+    fig.colorbar(im1)
+    im1.set_clim(clim_1)
+    axs[0].set_title("WV Test (g/cm^2)")
+    
+    im2 = axs[1].imshow(pred)
+    fig.colorbar(im2)
+    im2.set_clim(clim_1)
+    axs[1].set_title("WV Pred (g/cm^2)")
+    
+    residuals = np.subtract(pred, test)
+    im3 = axs[2].imshow(residuals, cmap = 'seismic')
+    fig.colorbar(im3)
+    im3.set_clim(clim_2)
+    axs[2].set_title('Residuals (Predicted - Actual) WV Mask');
     
