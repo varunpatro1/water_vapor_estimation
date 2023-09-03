@@ -51,7 +51,7 @@ def plot_h2o_compare(wv_test, wv_pred):
 
 
 def plot_masks_and_residuals(test, pred, idx, clim_1 = (0, 6), clim_2 = (-1, 1)):
-    fig, axs = plt.subplots(nrows = 1, ncols = 3, figsize = (14, 8), constrained_layout = True)
+    fig, axs = plt.subplots(nrows = 1, ncols = 3, figsize = (10, 4), constrained_layout = True)
 
     test = test[idx]
     pred = pred[idx]
@@ -70,5 +70,5 @@ def plot_masks_and_residuals(test, pred, idx, clim_1 = (0, 6), clim_2 = (-1, 1))
     im3 = axs[2].imshow(residuals, cmap = 'seismic')
     fig.colorbar(im3)
     im3.set_clim(clim_2)
-    axs[2].set_title('Residuals (Predicted - Actual) WV Mask');
+    axs[2].set_title('Residuals (Pred - Test)');
     
