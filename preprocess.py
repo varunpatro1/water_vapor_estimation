@@ -54,23 +54,15 @@ def extract_subset_from_header(path_list, irr_path):
     rad = data[1]
     zen = np.deg2rad(np.average(data[0][...,4]))
     es_distance = data[0][...,10]
-    cloud_flag = data[2][..., 0]
-    cirrus_flag = data[2][..., 1]
-    water_flag = data[2][..., 2]
-    spacecraft_flag = data[2][..., 3]
     dilated_cloud_flag = data[2][...,4]
-    aod_flag = data[2][..., 5]
     water_vapor = data[2][...,6]
-    aggregate_flag = data[2][..., 7]
 
-    mask_dict = {'cloud flag': cloud_flag, 'cirrus flag': cirrus_flag, 'water flag': water_flag, \
-                'spacecraft flag': spacecraft_flag, 'dilated cloud flag': dilated_cloud_flag, 'aod flag': aod_flag, \
-                'aggregate flag': aggregate_flag}
-
+    rad, water_vapor = screen_clouds(dilated_cloud_flag, rad, water_vapor)
+    
     irr = calc_irr(path_list[1], irr_path)
     irr = irr * ((np.average(es_distance))**2)
 
-    return rad, zen, irr, water_vapor, mask_dict
+    return rad, zen, irr, water_vapor
 
 
 def calc_irr(rad_path: str, irr_path: str):
@@ -95,7 +87,7 @@ def calc_irr(rad_path: str, irr_path: str):
 def transform_entire_scene(file_path_list, irr_path):
 
     # perform TOA reflectance calculation
-    rad, zen, irr, wv, mask_dict = extract_subset_from_header(file_path_list, irr_path)
+    rad, zen, irr, wv = extract_subset_from_header(file_path_list, irr_path)
     refl = (np.pi / np.cos(zen)) * (rad / irr[np.newaxis, np.newaxis, :])
 
     # reshape and randomly select
@@ -107,7 +99,7 @@ def transform_entire_scene(file_path_list, irr_path):
     print('Water Vapor: ', wv.shape)
     print('CONVERSION COMPLETE')
 
-    return refl, wv, mask_dict
+    return refl, wv
 
 def transform_and_select(file_path_list, irr_path, num_to_select):
 
@@ -125,10 +117,11 @@ def transform_and_select(file_path_list, irr_path, num_to_select):
 
     return refl, wv
 
-def convert_rad(file_path_list, irr_path):
+def screen_clouds(cloud_mask, rad_crosstrack, wv_crosstrack):
     
-    # perform TOA reflectance calculation
-    rad, zen, irr, wv = extract_from_header(file_path_list, irr_path)
-    refl = (np.pi / np.cos(zen)) * (rad / irr[np.newaxis, np.newaxis, :])
+    cloud_indices = np.argwhere(cloud_mask == 1)
+    cloud_indices = cloud_indices[:,0]
+    rad_crosstrack[cloud_indices] = np.nan
+    wv_crosstrack[cloud_indices] = np.nan
 
-    return refl
+    return rad_crosstrack, wv_crosstrack
