@@ -1,3 +1,5 @@
+
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -240,6 +242,46 @@ def plot_range_scatter_all_models(fnames, mode):
             axs[col].scatter(test_ranges, pred_ranges, alpha = 0.5)
             axs[col].set_xticks(range(0, 7))
             axs[col].set_yticks(range(0, 7))
+            
+        axs[col].text(0.7, 0.15,  'y = %.2fx + %.2f' % (slope, intercept), transform=axs[col].transAxes)
+        axs[col].text(0.7, 0.1,  'MSE: %.2f' % (mse), transform=axs[col].transAxes)
+        axs[col].set_title(title);
+        axs[col].set_xlabel('Actual WV Ranges (g/cm^2)');
+        axs[col].set_ylabel('Predicted WV Ranges (g/cm^2)');
+    
+        col+=1
+
+
+def plot_range_scatter_all_models_pixel_cloud_mask(fnames):
+
+    fig, axs = plt.subplots(1, 3, figsize = (12, 4))
+    fig.tight_layout(pad=0.4, w_pad=2.5, h_pad=4.0)
+    
+    col = 0
+    
+    for i in range(len(fnames)):
+    
+        path = fnames[i]
+        data = np.load(path)
+        y_pred, y_test, y_test_placehold, y_test_cloud_mask, y_train = data['arr_0'], data['arr_1'], data['arr_2'], data['arr_3'], data['arr_4']
+    
+        model_name = path[path.rfind('/')+1: path.rfind('.')].upper()
+        y_pred_resh = np.zeros(y_test_placehold.shape)
+        y_pred_resh = y_pred_resh.flatten()
+        y_pred_resh[y_test_cloud_mask.flatten() == 0] = y_pred
+        y_pred_resh = y_pred_resh.reshape(y_test_placehold.shape)
+
+        test_ranges = np.nanmax(y_test_placehold, axis = 1) - np.nanmin(y_test_placehold, axis = 1)
+        pred_ranges = np.nanmax(y_pred_resh, axis = 1) - np.nanmin(y_pred_resh, axis = 1)
+
+        title = 'WVR Absolute Comparison for ' + model_name
+
+        mse = mean_squared_error(test_ranges, pred_ranges)
+        slope, intercept, r_value, p_value, std_err = linregress(test_ranges, pred_ranges)
+
+        axs[col].scatter(test_ranges, pred_ranges, alpha = 0.5)
+        axs[col].set_xticks(range(0, 7))
+        axs[col].set_yticks(range(0, 7))
             
         axs[col].text(0.7, 0.15,  'y = %.2fx + %.2f' % (slope, intercept), transform=axs[col].transAxes)
         axs[col].text(0.7, 0.1,  'MSE: %.2f' % (mse), transform=axs[col].transAxes)
