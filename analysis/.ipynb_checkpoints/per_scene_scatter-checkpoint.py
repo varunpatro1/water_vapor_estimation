@@ -121,7 +121,7 @@ def plot_hist_train_test(fnames):
         col+=1
 
 
-def plot_scatter_test_pred(fnames):
+def plot_scatter_train_test(fnames):
 
     fig, axs = plt.subplots(2, 2, figsize = (10, 8))
     fig.tight_layout(pad=0.4, w_pad=2.5, h_pad=4.0)
