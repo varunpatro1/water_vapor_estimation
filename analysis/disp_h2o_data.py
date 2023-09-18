@@ -50,7 +50,7 @@ def plot_h2o_compare(wv_test, wv_pred):
     im2.set_clim(0, 4.0)
 
 
-def plot_masks_and_residuals(test, pred, idx, clim_1 = (0, 6), clim_2 = (-1, 1)):
+def plot_masks_and_residuals(test, pred, test_paths, pred_paths, idx, clim_1 = (0, 6), clim_2 = (-1, 1)):
     fig, axs = plt.subplots(nrows = 1, ncols = 3, figsize = (10, 4), constrained_layout = True)
 
     test = test[idx]
@@ -71,4 +71,7 @@ def plot_masks_and_residuals(test, pred, idx, clim_1 = (0, 6), clim_2 = (-1, 1))
     fig.colorbar(im3)
     im3.set_clim(clim_2)
     axs[2].set_title('Residuals (Pred - Test)');
+    
+    print(test_paths[idx])
+    print(pred_paths[idx])
     
